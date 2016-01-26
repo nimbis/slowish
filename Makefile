@@ -50,6 +50,23 @@ coverage: check-venv
 	coverage html
 	@echo "See ./htmlcov/index.html for coverage report"
 
+#
+# testing within Travis
+#
+
+.PHONY: travis-tests
+travis-tests: check-venv
+	@echo "travis_fold:start:flake8"
+	make flake8
+	@echo "travis_fold:end:flake8"
+
+	@echo "travis_fold:start:pip_freeze"
+	pip freeze -l
+	@echo "travis_fold:end:pip_freeze"
+
+	@echo "travis_fold:start:test"
+	make test
+	@echo "travis_fold:end:test"
 
 develop-%: check-venv
 	cd ../$*; python setup.py develop -N
