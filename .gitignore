@@ -3,3 +3,6 @@
 
 # Byte-compiled python files
 *.pyc
+
+# Generated package information
+*.egg-info/

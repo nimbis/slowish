@@ -13,7 +13,7 @@ endif
 # Install pip requirements.txt file
 .PHONY: reqs
 reqs: check-venv
-	pip install --upgrade -r requirements.txt
+	pip install --upgrade -r test_project/requirements.txt
 
 PEP8_OPTS=--repeat --exclude=migrations,south_migrations,js,doc --show-source
 .PHONY: pep8
