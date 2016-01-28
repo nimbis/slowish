@@ -64,9 +64,15 @@ travis-tests: check-venv
 	pip freeze -l
 	@echo "travis_fold:end:pip_freeze"
 
+	coverage erase
 	@echo "travis_fold:start:test"
-	make test
+	coverage run $(COVERAGE_ARGS) ./manage.py test
 	@echo "travis_fold:end:test"
+
+	@echo "travis_fold:start:coverage"
+	coverage report
+	coverage html
+	@echo "travis_fold:end:coverage"
 
 develop-%: check-venv
 	cd ../$*; python setup.py develop -N

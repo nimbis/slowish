@@ -4,5 +4,9 @@
 # Byte-compiled python files
 *.pyc
 
+# Results from "make coverage" runs
+.coverage
+htmlcov
+
 # Generated package information
 *.egg-info/
