@@ -10,3 +10,6 @@ htmlcov
 
 # Generated package information
 *.egg-info/
+
+# Database used during testing
+test_project/db.sqlite3

@@ -3,6 +3,9 @@
 clean:
 	@find . -name "*.pyc" -exec rm {} \;
 
+distclean: clean
+	rm -f test_project/db.sqlite3
+
 # check that virtualenv is enabled
 .PHONY: check-venv
 check-venv:
@@ -35,7 +38,7 @@ flake8: check-venv
 
 .PHONY: test
 test: check-venv clean
-	python -Wall ./manage.py test
+	python -Wall ./manage.py test --keepdb
 
 #
 # code coverage
@@ -45,7 +48,7 @@ COVERAGE_ARGS=--source=slowish
 .PHONY: coverage
 coverage: check-venv
 	coverage erase
-	-coverage run $(COVERAGE_ARGS) ./manage.py test
+	-coverage run $(COVERAGE_ARGS) ./manage.py test --keepdb
 	coverage report
 	coverage html
 	@echo "See ./htmlcov/index.html for coverage report"
@@ -66,7 +69,7 @@ travis-tests: check-venv
 
 	coverage erase
 	@echo "travis_fold:start:test"
-	coverage run $(COVERAGE_ARGS) ./manage.py test
+	coverage run $(COVERAGE_ARGS) ./manage.py test --keepdb
 	@echo "travis_fold:end:test"
 
 	@echo "travis_fold:start:coverage"
