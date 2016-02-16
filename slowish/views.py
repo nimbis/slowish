@@ -36,10 +36,17 @@ def tokens(request):
 
     expiration = datetime.utcnow() + timedelta(days=2)
 
+    # The base URL we want to use is whatever is being used in the
+    # current request, but without any path, (not even a trailing
+    # slash). Use reverse on '/' to compute it with a final '/' and
+    # then the [:-1] slice to drop that.
+    base_url = request.build_absolute_uri('/')[:-1]
+
     template = loader.get_template('slowish/tokens.json')
     context = {
         "user": user,
         "expires": expiration.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "base_url": base_url
     }
     return HttpResponse(
         template.render(context, request),
@@ -48,4 +55,11 @@ def tokens(request):
 
 @csrf_exempt
 def account(request, account_id):
-    return HttpResponse("Not yet implemented.")
+    try:
+        SlowishUser.objects.get(
+            account__id=account_id,
+            token=request.META['HTTP_X_AUTH_TOKEN'])
+    except:
+        return unauthorized()
+
+    return HttpResponse("[]", content_type="application/json")
