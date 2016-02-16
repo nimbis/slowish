@@ -6,7 +6,7 @@ from django.test.client import Client
 from django.test.client import RequestFactory
 
 from .models import SlowishAccount, SlowishUser
-from .views import account
+from .views import account, container
 
 
 user_data = {
@@ -90,7 +90,7 @@ class FilesViewTest(TestCase):
     # RequestFactory to assemble the request and then we pass that
     # request directly into the account() view function.
     #
-    # Here is a helper function to make that more convenient
+    # Here are some helper functions to make that more convenient
     def account_view_get(self, use_invalid_token=False):
         request = self.factory.get(
             reverse('account',
@@ -100,6 +100,14 @@ class FilesViewTest(TestCase):
         else:
             request.META['HTTP_X_AUTH_TOKEN'] = self.user.token
         return account(request, self.user.account.id)
+
+    def container_view_put(self, container_name):
+        request = self.factory.put(
+            reverse('container',
+                    kwargs={'account_id': self.user.account.id,
+                            'container_name': container_name}))
+        request.META['HTTP_X_AUTH_TOKEN'] = self.user.token
+        return container(request, self.user.account.id, container_name)
 
     def test_account_authorized(self):
         """
@@ -113,6 +121,7 @@ class FilesViewTest(TestCase):
         # Then, try again with the correct token, which should work
         response = self.account_view_get()
         self.assertEquals(response.status_code, 200)
+        self.assertJSONEqual(response.content, "[]")
 
     def test_account_content(self):
         """
@@ -122,3 +131,16 @@ class FilesViewTest(TestCase):
         # With no containers, we expect an empty list
         response = self.account_view_get()
         self.assertJSONEqual(response.content, "[]")
+
+    def test_container_create(self):
+        """
+        Verify we can create a new container.
+        """
+
+        # Prior to creation, there shold be an empty list of containers
+        response = self.account_view_get()
+        self.assertJSONEqual(response.content, "[]")
+
+        # Issue a PUT request to create a new container
+        response = self.container_view_put('new_container')
+        self.assertEquals(response.status_code, 201)
