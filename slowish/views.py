@@ -63,6 +63,7 @@ def account(request, account_id):
         return unauthorized()
 
     containers = SlowishContainer.objects.filter(account__id=account_id)
+    containers = containers.order_by('name')
 
     # Note: The need for safe=False is documented here:
     #
