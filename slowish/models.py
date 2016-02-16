@@ -57,3 +57,21 @@ class SlowishUser(models.Model):
 
     def __unicode__(self):
         return "{0} (in account {1})".format(self.username, self.account.id)
+
+
+class SlowishContainer(models.Model):
+    """A container, (within a particular account)."""
+
+    account = models.ForeignKey(SlowishAccount, on_delete=models.CASCADE)
+
+    name = models.CharField(
+        help_text="A name for this container.",
+        max_length=255)
+
+    class Meta:
+        verbose_name = "Slowish Container"
+        verbose_name_plural = "Slowish Containers"
+        unique_together = ('account', 'name')
+
+    def __unicode__(self):
+        return "{0} (in account {1})".format(self.name, self.account.id)
