@@ -4,8 +4,9 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.test.client import Client
 from django.test.client import RequestFactory
+from django.http import Http404
 
-from .models import SlowishAccount, SlowishUser
+from .models import SlowishAccount, SlowishUser, SlowishContainer
 from .views import account, container
 
 
@@ -108,6 +109,17 @@ class FilesViewTest(TestCase):
         request.META['HTTP_X_AUTH_TOKEN'] = self.user.token
         return container(request, self.user.account.id, container_name)
 
+    def container_view_get(self, container_name, use_invalid_token=False):
+        request = self.factory.get(
+            reverse('container',
+                    kwargs={'account_id': self.user.account.id,
+                            'container_name': container_name}))
+        if (use_invalid_token):
+            request.META['HTTP_X_AUTH_TOKEN'] = 'bogus'
+        else:
+            request.META['HTTP_X_AUTH_TOKEN'] = self.user.token
+        return container(request, self.user.account.id, container_name)
+
     def test_account_authorized(self):
         """Verify that the account view requires a valid token."""
 
@@ -127,6 +139,22 @@ class FilesViewTest(TestCase):
         response = self.account_view_get()
         self.assertJSONEqual(response.content, "[]")
 
+    def test_container_authorized(self):
+        """Verify that the container view requires a valid token."""
+
+        SlowishContainer.objects.create(
+            account=self.user.account,
+            name='test')
+
+        # First attempt to connect with an invalid token. This should fail.
+        response = self.container_view_get('test', use_invalid_token=True)
+        self.assertEquals(response.status_code, 401)
+
+        # Then, try again with the correct token, which should work,
+        # (and gives a "204"---No content response status)
+        response = self.container_view_get('test')
+        self.assertEquals(response.status_code, 204)
+
     def test_container_create(self):
         """Verify we can create a new container."""
 
@@ -134,6 +162,17 @@ class FilesViewTest(TestCase):
         response = self.account_view_get()
         self.assertJSONEqual(response.content, "[]")
 
-        # Issue a PUT request to create a new container
+        # Issue a PUT request to create a new container (returns a
+        # status of 201==Created)
         response = self.container_view_put('new_container')
         self.assertEquals(response.status_code, 201)
+
+        # Trying to create again is fine and gives a 200==OK status
+        response = self.container_view_put('new_container')
+        self.assertEquals(response.status_code, 200)
+
+    def test_container_does_not_exist(self):
+        """Verify a 404 status for a non-existent container."""
+
+        with self.assertRaises(Http404):
+            self.container_view_get('does_not_exist')
