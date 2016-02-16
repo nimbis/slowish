@@ -44,3 +44,8 @@ def tokens(request):
     return HttpResponse(
         template.render(context, request),
         content_type="application/json")
+
+
+@csrf_exempt
+def account(request, account_id):
+    return HttpResponse("Not yet implemented.")
