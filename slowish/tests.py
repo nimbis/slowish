@@ -110,3 +110,10 @@ class FilesViewTest(TestCase):
         # Then, try again with the correct token, which should work
         response = self.account_view_get()
         self.assertEquals(response.status_code, 200)
+
+    def test_account_content(self):
+        """Verify the json response content from the account view."""
+
+        # With no containers, we expect an empty list
+        response = self.account_view_get()
+        self.assertJSONEqual(response.content, "[]")
