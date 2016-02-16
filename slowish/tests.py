@@ -180,6 +180,13 @@ class FilesViewTest(TestCase):
         response = self.container_view_put('new_container')
         self.assertEquals(response.status_code, 200)
 
+        # Verify that the newly created container now appears in the
+        # list of containers
+        response = self.account_view_get()
+        self.assertJSONEqual(
+            response.content,
+            '[{"count": 0, "bytes": 0, "name": "new_container"}]')
+
     def test_container_does_not_exist(self):
         """ Verify a 404 status for a non-existent container. """
 
