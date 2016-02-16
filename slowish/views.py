@@ -63,3 +63,8 @@ def account(request, account_id):
         return unauthorized()
 
     return HttpResponse("[]", content_type="application/json")
+
+
+@csrf_exempt
+def container(request, account_id, container_name):
+    return account(request, account_id)
