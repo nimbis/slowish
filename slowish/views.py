@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 import json
 
-from django.http import JsonResponse
-from django.http import HttpResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.template import loader
+from django.shortcuts import get_object_or_404
 
-from .models import SlowishUser
+from .models import SlowishAccount, SlowishUser, SlowishContainer
 
 
 def unauthorized():
@@ -67,4 +67,26 @@ def account(request, account_id):
 
 @csrf_exempt
 def container(request, account_id, container_name):
-    return account(request, account_id)
+    try:
+        SlowishUser.objects.get(
+            account__id=account_id,
+            token=request.META['HTTP_X_AUTH_TOKEN'])
+    except:
+        return unauthorized()
+
+    account = get_object_or_404(SlowishAccount, id=account_id)
+
+    if (request.method == 'PUT'):
+        (container, created) = SlowishContainer.objects.get_or_create(
+            account=account,
+            name=container_name)
+        if (created):
+            return HttpResponse('', status=201)  # Created
+        else:
+            return HttpResponse('', status=200)  # OK
+
+    # For request.method == 'GET' (and anything else really)
+    get_object_or_404(SlowishContainer,
+                      account=account,
+                      name=container_name)
+    return HttpResponse('', status=204)  # No content
