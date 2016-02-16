@@ -62,7 +62,25 @@ def account(request, account_id):
     except:
         return unauthorized()
 
-    return HttpResponse("[]", content_type="application/json")
+    containers = SlowishContainer.objects.filter(account__id=account_id)
+
+    # Note: The need for safe=False is documented here:
+    #
+    # https://docs.djangoproject.com/en/1.9/ref/request-response/#jsonresponse-objects
+    # The safety concern is really a non-issue for us:
+    #
+    #   * As described above, this was only a concern with old browsers
+    #
+    #   * We don't expect browsers to be using this API anyway
+    #
+    #   * Regardless, we're implemeting the Swift API which has an
+    #     array return-value at this point, so there's nothing we
+    #     can change and remain compatible.
+    return JsonResponse(
+        [{"count": 0,
+          "bytes": 0,
+          "name": container.name} for container in containers],
+        safe=False)
 
 
 @csrf_exempt
