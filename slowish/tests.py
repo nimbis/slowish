@@ -135,6 +135,21 @@ class FilesViewTest(TestCase):
         self.assertEquals(response.status_code, 200)
         self.assertJSONEqual(response.content, "[]")
 
+    def test_account_ordered(self):
+        """ Ensure that containers are listed in alphabetical order."""
+
+        acc = self.user.account
+        SlowishContainer.objects.create(account=acc, name='foo')
+        SlowishContainer.objects.create(account=acc, name='bar')
+        SlowishContainer.objects.create(account=acc, name='baz')
+
+        response = self.account_view_get()
+        self.assertJSONEqual(
+            response.content,
+            '[{"count": 0, "bytes": 0, "name": "bar"},'
+            '{"count": 0, "bytes": 0, "name": "baz"},'
+            '{"count": 0, "bytes": 0, "name": "foo"}]')
+
     def test_account_content(self):
         """
         Verify the json response content from the account view
