@@ -92,14 +92,21 @@ class FilesViewTest(TestCase):
     # request directly into the account() view function.
     #
     # Here are some helper functions to make that more convenient
-    def account_view_get(self, use_invalid_token=False):
-        request = self.factory.get(
-            reverse('account',
-                    kwargs={'account_id': self.user.account.id}))
+    def account_view_get(self,
+                         use_invalid_token=False,
+                         query=''):
+
+        view_url = reverse('account',
+                           kwargs={'account_id': self.user.account.id})
+        view_url += query
+
+        request = self.factory.get(view_url)
+
         if (use_invalid_token):
             request.META['HTTP_X_AUTH_TOKEN'] = 'bogus'
         else:
             request.META['HTTP_X_AUTH_TOKEN'] = self.user.token
+
         return account(request, self.user.account.id)
 
     def container_view_put(self, container_name):
@@ -149,6 +156,41 @@ class FilesViewTest(TestCase):
             '[{"count": 0, "bytes": 0, "name": "bar"},'
             '{"count": 0, "bytes": 0, "name": "baz"},'
             '{"count": 0, "bytes": 0, "name": "foo"}]')
+
+    def test_account_range(self):
+        """ Test marker and end_marker parameters when listing containers."""
+
+        acc = self.user.account
+        SlowishContainer.objects.create(account=acc, name='this')
+        SlowishContainer.objects.create(account=acc, name='is')
+        SlowishContainer.objects.create(account=acc, name='a')
+        SlowishContainer.objects.create(account=acc, name='collection')
+        SlowishContainer.objects.create(account=acc, name='of')
+        SlowishContainer.objects.create(account=acc, name='container')
+        SlowishContainer.objects.create(account=acc, name='names')
+        SlowishContainer.objects.create(account=acc, name='in')
+        SlowishContainer.objects.create(account=acc, name='no')
+        SlowishContainer.objects.create(account=acc, name='particular')
+        SlowishContainer.objects.create(account=acc, name='order')
+
+        response = self.account_view_get(query="?marker=order")
+        self.assertJSONEqual(
+            response.content,
+            '[{"count": 0, "bytes": 0, "name": "particular"},'
+            '{"count": 0, "bytes": 0, "name": "this"}]')
+
+        response = self.account_view_get(query="?end_marker=container")
+        self.assertJSONEqual(
+            response.content,
+            '[{"count": 0, "bytes": 0, "name": "a"},'
+            '{"count": 0, "bytes": 0, "name": "collection"}]')
+
+        response = self.account_view_get(
+            query="?marker=container&end_marker=names")
+        self.assertJSONEqual(
+            response.content,
+            '[{"count": 0, "bytes": 0, "name": "in"},'
+            '{"count": 0, "bytes": 0, "name": "is"}]')
 
     def test_account_content(self):
         """
