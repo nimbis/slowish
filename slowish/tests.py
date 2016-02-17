@@ -90,8 +90,13 @@ class FilesViewTest(TestCase):
     # request directly into the account() view function.
     #
     # Here are some helper functions to make that more convenient
-    def account_view_get(self, use_invalid_token=False):
+    def account_view_get(self,
+                         use_invalid_token=False,
+                         query=''):
+
         url = reverse('account', kwargs={'account_id': self.user.account.id})
+        url += query
+
         request = self.factory.get(url)
 
         if (use_invalid_token):
@@ -146,6 +151,34 @@ class FilesViewTest(TestCase):
             '[{"count": 0, "bytes": 0, "name": "bar"},'
             '{"count": 0, "bytes": 0, "name": "baz"},'
             '{"count": 0, "bytes": 0, "name": "foo"}]')
+
+    def test_account_range(self):
+        """Test marker and end_marker parameters when listing containers."""
+
+        account = self.user.account
+        names = ['this', 'is', 'a', 'collection', 'of', 'container',
+                 'names', 'in', 'no', 'particular', 'order']
+        for name in names:
+            SlowishContainer.objects.create(account=account, name=name)
+
+        response = self.account_view_get(query="?marker=order")
+        self.assertJSONEqual(
+            response.content,
+            '[{"count": 0, "bytes": 0, "name": "particular"},'
+            '{"count": 0, "bytes": 0, "name": "this"}]')
+
+        response = self.account_view_get(query="?end_marker=container")
+        self.assertJSONEqual(
+            response.content,
+            '[{"count": 0, "bytes": 0, "name": "a"},'
+            '{"count": 0, "bytes": 0, "name": "collection"}]')
+
+        response = self.account_view_get(
+            query="?marker=container&end_marker=names")
+        self.assertJSONEqual(
+            response.content,
+            '[{"count": 0, "bytes": 0, "name": "in"},'
+            '{"count": 0, "bytes": 0, "name": "is"}]')
 
     def test_account_content(self):
         """Verify the json response content from the account view."""
