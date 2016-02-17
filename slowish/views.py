@@ -65,6 +65,19 @@ def account(request, account_id):
     containers = SlowishContainer.objects.filter(account__id=account_id)
     containers = containers.order_by('name')
 
+    if request.GET:
+        try:
+            marker = request.GET['marker']
+            containers = filter(lambda(x): x.name > marker, containers)
+        except KeyError:
+            pass
+
+        try:
+            end_marker = request.GET['end_marker']
+            containers = filter(lambda(x): x.name < end_marker, containers)
+        except KeyError:
+            pass
+
     # Note: The need for safe=False is documented here:
     #
     # https://docs.djangoproject.com/en/1.9/ref/request-response/#jsonresponse-objects
