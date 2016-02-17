@@ -1,0 +1,118 @@
+<html>
+  <head>
+    <title>Welcome to Slowish</title>
+  </head>
+  <body>
+    <h1>Welcome to Slowish</h1>
+
+    <p>
+      Slowish is a Django app that provides a lightweight
+      implementation of the
+      <a href="http://docs.openstack.org/developer/swift/">Swift
+      API</a>.  Slowish is not intended as a production-ready
+      implementation of Swift. It's merely meant to be used as an
+      endpoint to assist in testing other apps that target Swift,
+      (without requiring a full-blown OpenStack instance running just
+      to support the tests).
+    </p>
+
+    <p>
+      Follow the steps below to explore the capabilities of Slowish by
+      using either of the command-line
+      programs <a href="https://curl.haxx.se/">curl</a> or swift
+      (which ships as part of
+      <a href="https://pypi.python.org/pypi/python-swiftclient">
+      python-swiftclient</a>).  You can also write python code using
+      the python-swiftclient API to target the Slowish endpoints.
+    </p>
+
+    <h2>Account Setup in Slowish</h2>
+
+    <p>
+      Before you can use Slowish, you'll need to create a couple of
+      objects within its database. Run <code>python manage.py
+      createsuperuser</code> to create a superuser account. Then
+      connect to the <a href="/admin">Slowish admin interface</a> and
+      create a SlowishAccount as well as a SlowishUser within that
+      account.
+    </p>
+
+    <p>
+      You can use any valid values you like for account ID, username,
+      and password, but take note of them, because you will need them
+      in the next step.
+    </p>
+
+    <h2>Enviroment Setup</h2>
+
+    <p>
+      Using the values you used when creating the account and user in
+      the previous step, set the following environment variables:
+
+      <ul>
+        <li>OS_AUTH_URL={{ base_url }}slowish</li>
+        <li>OS_TENANT_ID=<em>&lt;account_id&gt;</em></li>
+        <li>OS_USERNAME=<em>&lt;username&gt;</em></li>
+        <li>OS_PASSWORD=<em>&lt;password&gt;</em></li>
+      </ul>
+
+      These variables will need to be set for any of the following
+      steps.
+    </p>
+
+    <h2>Verify Authentication</h2>
+
+    <p>
+      The simplest step you can perform with Slowish is to verify that
+      you can succesfully authenticate. Use one of the following commands:
+
+      <ul>
+        <li>swift auth</li>
+        <li>curl $OS_AUTH_URL/tokens -X POST -H "Accept: application/json" -H "Content-type: application/json" -d '{"auth": {"passwordCredentials": {"username": "'$OS_USERNAME'", "password": "'$OS_PASSWORD'"}, "tenantId": "'$OS_TENANT_ID'"}}'</li>
+      </ul>
+
+      With either command, the results you get provide you with two
+      values, an edpoint URL to use for subsequent requests, as well
+      as a token that will need to be sent with each request.
+    </p>
+
+    <p>
+      If you are using the swift client, you will not need to note
+      these values, (all swift commands will internally issue an
+      authentication request and obtain the values needed). But for
+      making direct request with curl, you should now set two
+      additional environment variables using the values obtained from
+      your authentication request:
+
+      <ul>
+        <li>OS_STORAGE_URL=<em>&lt;public_url&gt;</em></li>
+        <li>OS_AUTH_TOKEN=<em>&lt;token_id&gt;</em></li>
+      </ul>
+    </p>
+
+    <h2>Create a container</h2>
+
+    <p>
+      Now that you can successfully authenticate, you can create a
+      container within your Slowish account using either of the
+      following commands:
+
+      <ul>
+        <li>swift post <em>&lt;container_name&gt;</em></li>
+        <li>curl $OS_STORAGE_URL/<em>&lt;container_name&gt;</em> -X PUT -H "x-auth-token: $OS_AUTH_TOKEN"</li>
+      </ul>
+    </p>
+
+    <h2>List available containers</h2>
+
+    <p>
+      You can list all available containers with either of the
+      following commands:
+
+      <ul>
+        <li>swift list</li>
+        <li>curl $OS_STORAGE_URL -X GET -H "x-auth-token: $OS_AUTH_TOKEN"</li>
+      </ul>
+    </p>
+  </body>
+</html>
