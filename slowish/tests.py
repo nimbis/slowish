@@ -6,7 +6,7 @@ from django.test.client import Client
 from django.test.client import RequestFactory
 from django.http import Http404
 
-from .models import SlowishAccount, SlowishUser, SlowishContainer
+from .models import SlowishAccount, SlowishUser, SlowishContainer, SlowishFile
 from .views import account, container
 
 
@@ -52,6 +52,10 @@ class TokensViewTest(TestCase):
         """Verify that the tokens view gives a token to an authorized user."""
 
         self.user = create_user()
+
+        # Test the __unicode__ methods in SlowishAccount and SlowishUser
+        self.assertEquals(str(self.user.account), "1234")
+        self.assertEquals(str(self.user), "user (in account 1234)")
 
         data = user_data
 
@@ -235,6 +239,10 @@ class FilesViewTest(TestCase):
             response.content,
             '[{"count": 0, "bytes": 0, "name": "new_container"}]')
 
+        # Test the __unicode__ method within SlowishContainer
+        container = SlowishContainer.objects.get(name="new_container")
+        self.assertEquals(str(container), "new_container (in account 1234)")
+
     def test_file_create(self):
         """Verify we can create a file within a container."""
 
@@ -249,6 +257,12 @@ class FilesViewTest(TestCase):
         # Trying to create again is fine and gives a 200=OK status
         response = self.file_view_put('container', 'path/to/file')
         self.assertEquals(response.status_code, 200)
+
+        # Test the __unicode__ method within SlowishFile
+        file = SlowishFile.objects.get(path="path/to/file")
+        self.assertEquals(
+            str(file),
+            "path/to/file (in container container (in account 1234))")
 
     def test_container_does_not_exist(self):
         """Verify a 404 status for a non-existent container."""
