@@ -24,7 +24,10 @@ def tokens(request):
 
     try:
         jreq = json.loads(request.body)
-        account_id = jreq['auth']['tenantId']
+        try:
+            account_id = jreq['auth']['tenantId']
+        except:
+            account_id = jreq['auth']['tenantName']
         username = jreq['auth']['passwordCredentials']['username']
         password = jreq['auth']['passwordCredentials']['password']
         user = SlowishUser.objects.get(
