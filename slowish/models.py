@@ -75,3 +75,23 @@ class SlowishContainer(models.Model):
 
     def __unicode__(self):
         return "{0} (in account {1})".format(self.name, self.account.id)
+
+
+class SlowishFile(models.Model):
+    """A file, (within a particular container)."""
+
+    container = models.ForeignKey(SlowishContainer, on_delete=models.CASCADE)
+
+    # 1024 length limit is documented here:
+    # http://docs.openstack.org/developer/swift/api/object_api_v1_overview.html#object-storage-api-overview
+    path = models.CharField(
+        help_text="Complete path of this file (within the container).",
+        max_length=1024)
+
+    class Meta:
+        verbose_name = "Slowish File"
+        verbose_name_plural = "Slowish Files"
+        unique_together = ('container', 'path')
+
+    def __unicode__(self):
+        return "{0} (in container {1})".format(self.path, self.container)

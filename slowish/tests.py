@@ -107,10 +107,10 @@ class FilesViewTest(TestCase):
         return account(request, self.user.account.id)
 
     def container_view_put(self, container_name):
-        request = self.factory.put(
-            reverse('container',
-                    kwargs={'account_id': self.user.account.id,
-                            'container_name': container_name}))
+        url = reverse('container',
+                      kwargs={'account_id': self.user.account.id,
+                              'container_name': container_name})
+        request = self.factory.put(url)
         request.META['HTTP_X_AUTH_TOKEN'] = self.user.token
         return container(request, self.user.account.id, container_name)
 
@@ -124,6 +124,15 @@ class FilesViewTest(TestCase):
         else:
             request.META['HTTP_X_AUTH_TOKEN'] = self.user.token
         return container(request, self.user.account.id, container_name)
+
+    def file_view_put(self, container_name, path):
+        url = reverse('file',
+                      kwargs={'account_id': self.user.account.id,
+                              'container_name': container_name,
+                              'path': path})
+        request = self.factory.put(url)
+        request.META['HTTP_X_AUTH_TOKEN'] = self.user.token
+        return container(request, self.user.account.id, container_name, path)
 
     def test_account_authorized(self):
         """Verify that the account view requires a valid token."""
@@ -225,6 +234,21 @@ class FilesViewTest(TestCase):
         self.assertJSONEqual(
             response.content,
             '[{"count": 0, "bytes": 0, "name": "new_container"}]')
+
+    def test_file_create(self):
+        """Verify we can create a file within a container."""
+
+        # Create a container
+        self.container_view_put('container')
+
+        # Create a file within that container (returns status of
+        # 201==Created)
+        response = self.file_view_put('container', 'path/to/file')
+        self.assertEquals(response.status_code, 201)
+
+        # Trying to create again is fine and gives a 200=OK status
+        response = self.file_view_put('container', 'path/to/file')
+        self.assertEquals(response.status_code, 200)
 
     def test_container_does_not_exist(self):
         """Verify a 404 status for a non-existent container."""

@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.template import loader
 from django.shortcuts import get_object_or_404
 
-from .models import SlowishAccount, SlowishUser, SlowishContainer
+from .models import SlowishAccount, SlowishUser, SlowishContainer, SlowishFile
 
 
 def unauthorized():
@@ -101,7 +101,7 @@ def account(request, account_id):
 
 
 @csrf_exempt
-def container(request, account_id, container_name):
+def container(request, account_id, container_name, path=''):
     try:
         SlowishUser.objects.get(
             account__id=account_id,
@@ -111,17 +111,25 @@ def container(request, account_id, container_name):
 
     account = get_object_or_404(SlowishAccount, id=account_id)
 
-    if (request.method == 'PUT'):
-        (container, created) = SlowishContainer.objects.get_or_create(
-            account=account,
-            name=container_name)
-        if (created):
-            return HttpResponse('', status=201)  # Created
-        else:
-            return HttpResponse('', status=200)  # OK
+    if (request.method != 'PUT'):
+        # For request.method == 'GET' (and anything else really)
+        get_object_or_404(SlowishContainer,
+                          account=account,
+                          name=container_name)
+        return HttpResponse('', status=204)  # No content
 
-    # For request.method == 'GET' (and anything else really)
-    get_object_or_404(SlowishContainer,
-                      account=account,
-                      name=container_name)
-    return HttpResponse('', status=204)  # No content
+    (container, container_created) = SlowishContainer.objects.get_or_create(
+        account=account,
+        name=container_name)
+
+    if (path != ''):
+        (file, file_created) = SlowishFile.objects.get_or_create(
+            container=container,
+            path=path)
+    else:
+        file_created = False
+
+    if (container_created or file_created):
+        return HttpResponse('', status=201)  # Created
+    else:
+        return HttpResponse('', status=200)  # OK

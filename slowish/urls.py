@@ -9,7 +9,13 @@ urlpatterns = [
         views.account,
         name='account'),
 
-    url(r'^files/(?P<account_id>[0-9]+)/(?P<container_name>[^/]*)',
+    url(r'^files/(?P<account_id>[0-9]+)/(?P<container_name>[^/]*)/?$',
         views.container,
-        name='container')
+        name='container'),
+
+    url(r'^files/(?P<account_id>[0-9]+)/'
+        '(?P<container_name>[^/]*)/'
+        '(?P<path>.*)',
+        views.container,
+        name='file')
 ]
