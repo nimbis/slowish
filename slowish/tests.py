@@ -80,6 +80,32 @@ class TokensViewTest(TestCase):
             content_type="application/json")
         self.assertEquals(response.status_code, 401)
 
+    def test_tokens_with_tenant_name(self):
+        """Verify that we can authenticate with a 'tenantName' entry."""
+
+        self.user = create_user()
+
+        # Drop the tenantId from the data
+        data = user_data.copy()
+        del data["auth"]["tenantId"]
+
+        # Ensure that we can't authenticate that way
+        response = self.client.post(
+            reverse('tokens'),
+            json.dumps(data),
+            content_type="application/json")
+        self.assertEquals(response.status_code, 401)
+
+        # Add a tenantName instead
+        data["auth"]["tenantName"] = "1234"
+
+        # And verify that that works
+        response = self.client.post(
+            reverse('tokens'),
+            json.dumps(data),
+            content_type="application/json")
+        self.assertEquals(response.status_code, 200)
+
 
 class FilesViewTest(TestCase):
 
