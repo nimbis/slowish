@@ -100,24 +100,7 @@ def account(request, account_id):
         safe=False)
 
 
-@csrf_exempt
-def container(request, account_id, container_name, path=''):
-    try:
-        SlowishUser.objects.get(
-            account__id=account_id,
-            token=request.META['HTTP_X_AUTH_TOKEN'])
-    except:
-        return unauthorized()
-
-    account = get_object_or_404(SlowishAccount, id=account_id)
-
-    if (request.method != 'PUT'):
-        # For request.method == 'GET' (and anything else really)
-        get_object_or_404(SlowishContainer,
-                          account=account,
-                          name=container_name)
-        return HttpResponse('', status=204)  # No content
-
+def container_put(request, account, container_name, path):
     (container, container_created) = SlowishContainer.objects.get_or_create(
         account=account,
         name=container_name)
@@ -133,3 +116,58 @@ def container(request, account_id, container_name, path=''):
         return HttpResponse('', status=201)  # Created
     else:
         return HttpResponse('', status=200)  # OK
+
+
+# We haven't yet implemented support for storing fie contents, but a
+# GET of a file path is still useful for distinguishing whether it
+# exists in the container or not.
+def container_get_file(request, container, path):
+    try:
+        SlowishFile.objects.get(container=container, path=path)
+        return HttpResponse('', status=200)  # OK
+    except:
+        return HttpResponse('', status=404)
+
+
+def container_get_contents(request, container):
+
+    files = SlowishFile.objects.filter(container=container).order_by("path")
+
+    if request.GET:
+        if "marker" in request.GET:
+            files = files.filter(path__gt=request.GET["marker"])
+
+        if "end_marker" in request.GET:
+            files = files.filter(path__lt=request.GET["end_marker"])
+
+    # See comment by call to JsonResponse above for justification of safe=False
+    return JsonResponse(
+        [{"bytes": 0,
+          "name": file.path,
+          "content_type": "application/directory"} for file in files],
+        safe=False)
+
+
+@csrf_exempt
+def container(request, account_id, container_name, path=''):
+    try:
+        SlowishUser.objects.get(
+            account__id=account_id,
+            token=request.META['HTTP_X_AUTH_TOKEN'])
+    except:
+        return unauthorized()
+
+    account = get_object_or_404(SlowishAccount, id=account_id)
+
+    if (request.method == 'PUT'):
+        return container_put(request, account, container_name, path)
+
+    container = get_object_or_404(
+        SlowishContainer,
+        account=account,
+        name=container_name)
+
+    if path == '':
+        return container_get_contents(request, container)
+    else:
+        return container_get_file(request, container, path)

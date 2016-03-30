@@ -164,6 +164,16 @@ class FilesViewTest(TestCase):
         request.META['HTTP_X_AUTH_TOKEN'] = self.user.token
         return container(request, self.user.account.id, container_name, path)
 
+    def file_view_get(self, container_name, path='', query=''):
+        url = reverse('file',
+                      kwargs={'account_id': self.user.account.id,
+                              'container_name': container_name,
+                              'path': path})
+        url += query
+        request = self.factory.get(url)
+        request.META['HTTP_X_AUTH_TOKEN'] = self.user.token
+        return container(request, self.user.account.id, container_name, path)
+
     def test_account_authorized(self):
         """Verify that the account view requires a valid token."""
 
@@ -237,10 +247,9 @@ class FilesViewTest(TestCase):
         response = self.container_view_get('test', use_invalid_token=True)
         self.assertEquals(response.status_code, 401)
 
-        # Then, try again with the correct token, which should work,
-        # (and gives a "204"---No content response status)
+        # Then, try again with the correct token, which should work
         response = self.container_view_get('test')
-        self.assertEquals(response.status_code, 204)
+        self.assertEquals(response.status_code, 200)
 
     def test_container_create(self):
         """Verify we can create a new container."""
@@ -289,6 +298,79 @@ class FilesViewTest(TestCase):
         self.assertEquals(
             str(file),
             "path/to/file (in container container (in account 1234))")
+
+        # Create a couple of more files
+        self.file_view_put("container", "another/file")
+        self.file_view_put("container", "and/yet/one/more")
+
+        # Query list of files in container
+        response = self.file_view_get("container")
+        self.assertEquals(response.status_code, 200)
+        self.assertJSONEqual(
+            response.content,
+            '[{"bytes": 0, "content_type": "application/directory",'
+            '"name": "and/yet/one/more"},'
+            '{"bytes": 0, "content_type": "application/directory",'
+            '"name": "another/file"},'
+            '{"bytes": 0, "content_type": "application/directory",'
+            '"name": "path/to/file"}]')
+
+    def test_files_range(self):
+        """Verify marker and end_marker parameters for file list."""
+
+        container = SlowishContainer.objects.create(
+            account=self.user.account,
+            name="blob")
+
+        names = ['this', 'is', 'a', 'collection', 'of', 'file',
+                 'names', 'in', 'no', 'particular', 'order']
+        for name in names:
+            SlowishFile.objects.create(
+                container=container,
+                path=name)
+
+        response = self.file_view_get("blob", query="?marker=order")
+        self.assertJSONEqual(
+            response.content,
+            '[{"bytes": 0, "content_type": "application/directory",'
+            '"name": "particular"},'
+            '{"bytes": 0, "content_type": "application/directory",'
+            '"name": "this"}]')
+
+        response = self.file_view_get("blob", query="?end_marker=file")
+        self.assertJSONEqual(
+            response.content,
+            '[{"bytes": 0, "content_type": "application/directory",'
+            '"name": "a"},'
+            '{"bytes": 0, "content_type": "application/directory",'
+            '"name": "collection"}]')
+
+        response = self.file_view_get(
+            "blob",
+            query="?marker=file&end_marker=names")
+        self.assertJSONEqual(
+            response.content,
+            '[{"bytes": 0, "content_type": "application/directory",'
+            '"name": "in"},'
+            '{"bytes": 0, "content_type": "application/directory",'
+            '"name": "is"}]')
+
+    # We don't yet support getting file contents, but we can at least
+    # ask about directory objects that we have stored as files within
+    # a container.
+    def test_directory_get(self):
+        """Verify that a specific file in a container can be queried."""
+
+        self.container_view_put('container')
+        self.file_view_put('container', 'path/to/file')
+
+        # Verify file query returns successful status
+        response = self.file_view_get("container", "path/to/file")
+        self.assertEquals(response.status_code, 200)
+
+        # And a non-existent file should fail
+        response = self.file_view_get("container", "does/not/exist")
+        self.assertEquals(response.status_code, 404)
 
     def test_container_does_not_exist(self):
         """Verify a 404 status for a non-existent container."""
