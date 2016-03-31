@@ -164,6 +164,15 @@ class FilesViewTest(TestCase):
         request.META['HTTP_X_AUTH_TOKEN'] = self.user.token
         return container(request, self.user.account.id, container_name, path)
 
+    def file_view_delete(self, container_name, path):
+        url = reverse('file',
+                      kwargs={'account_id': self.user.account.id,
+                              'container_name': container_name,
+                              'path': path})
+        request = self.factory.delete(url)
+        request.META['HTTP_X_AUTH_TOKEN'] = self.user.token
+        return container(request, self.user.account.id, container_name, path)
+
     def file_view_get(self, container_name, path='', query=''):
         url = reverse('file',
                       kwargs={'account_id': self.user.account.id,
@@ -392,6 +401,36 @@ class FilesViewTest(TestCase):
 
         # And a non-existent file should fail
         response = self.file_view_get("container", "does/not/exist")
+        self.assertEquals(response.status_code, 404)
+
+    def test_file_delete(self):
+        """Verify we can delete a file from a container."""
+
+        # Create some files in a container
+        self.container_view_put("crew")
+        self.file_view_put("crew", "one_shirt")
+        self.file_view_put("crew", "two_shirt")
+        self.file_view_put("crew", "red_shirt")
+        self.file_view_put("crew", "blue_shirt")
+
+        # Verify presence of added files
+        response = self.file_view_get("crew", "red_shirt")
+        self.assertEquals(response.status_code, 200)
+        response = self.file_view_get("crew", "blue_shirt")
+        self.assertEquals(response.status_code, 200)
+
+        # Delete a file (I know you saw this coming)
+        response = self.file_view_delete("crew", "red_shirt")
+        self.assertEquals(response.status_code, 204)
+
+        # Verify deletion only of the single file
+        response = self.file_view_get("crew", "red_shirt")
+        self.assertEquals(response.status_code, 404)
+        response = self.file_view_get("crew", "blue_shirt")
+        self.assertEquals(response.status_code, 200)
+
+        # Attempt to delete again should fail
+        response = self.file_view_delete("crew", "red_shirt")
         self.assertEquals(response.status_code, 404)
 
     def test_container_does_not_exist(self):

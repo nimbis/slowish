@@ -112,6 +112,16 @@ def container_put(request, account, container_name, path):
         return HttpResponse('', status=200)  # OK
 
 
+def container_delete(request, container, path):
+    try:
+        file = SlowishFile.objects.get(container=container, path=path)
+    except:
+        return HttpResponse('', status=404)
+
+    file.delete()
+    return HttpResponse('', status=204)  # No content
+
+
 # We haven't yet implemented support for storing fie contents, but a
 # GET of a file path is still useful for distinguishing whether it
 # exists in the container or not.
@@ -163,6 +173,9 @@ def container(request, account_id, container_name, path=''):
         SlowishContainer,
         account=account,
         name=container_name)
+
+    if (request.method == 'DELETE'):
+        return container_delete(request, container, path)
 
     if path == '':
         return container_get_contents(request, container)
