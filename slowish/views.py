@@ -69,17 +69,11 @@ def account(request, account_id):
     containers = containers.order_by('name')
 
     if request.GET:
-        try:
-            marker = request.GET['marker']
-            containers = filter(lambda(x): x.name > marker, containers)
-        except KeyError:
-            pass
+        if "marker" in request.GET:
+            containers = containers.filter(name__gt=request.GET["marker"])
 
-        try:
-            end_marker = request.GET['end_marker']
-            containers = filter(lambda(x): x.name < end_marker, containers)
-        except KeyError:
-            pass
+        if "end_marker" in request.GET:
+            containers = containers.filter(name__lt=request.GET["end_marker"])
 
     # Note: The need for safe=False is documented here:
     #
