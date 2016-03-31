@@ -114,5 +114,52 @@
         <li>curl $OS_STORAGE_URL -X GET -H "x-auth-token: $OS_AUTH_TOKEN"</li>
       </ul>
     </p>
+
+    <h2>Create a file within a container</h2>
+
+    <p>
+      You can create a file within a container with either of the
+      following commands:
+
+      <ul>
+        <li>swift upload <em>&lt;container_name&gt;</em> <em>&lt;file_path&gt;</em></li>
+        <li>curl $OS_STORAGE_URL/<em>&lt;container_name&gt;</em>/<em>&lt;file_path&gt;</em> -X PUT -H "x-auth-token: $OS_AUTH_TOKEN"</li>
+      </ul>
+
+      Notes:
+      <ul>
+        <li>The <em>&lt;file_path&gt;</em> may contain slashes.</li>
+        <li>For the "swift upload" command, the
+          specified <em>&lt;file_path&gt;</em> must exist within the
+          local filesystem, (but the contents do not matter---slowish
+          currently ignores all file contents.</li>
+      </ul>
+    </p>
+
+    <h2>List files within a container</h2>
+
+    <p>
+      You can list the files that exist within a container,
+      (optionally restricted to files matching a particular prefix),
+      with either of the following commands:
+
+      <ul>
+        <li>swift list [-p <em>&lt;prefix&gt;</em>]  <em>&lt;container_name&gt;</em></li>
+        <li>curl $OS_STORAGE_URL/<em>&lt;container_name&gt;</em>[?prefix=<em>&lt;prefix&gt;</em>] -X GET -H "x-auth-token: $OS_AUTH_TOKEN"</li>
+      </ul>
+    </p>
+
+    <h2>Delete a file from a container</h2>
+
+    <p>
+      You can delete a file from a container with either of the
+      following commands:
+
+      <ul>
+        <li>swift delete <em>&lt;container_name&gt;</em> <em>&lt;file_path&gt;</em></li>
+        <li>curl $OS_STORAGE_URL/<em>&lt;container_name&gt;</em>/<em>&lt;file_path&gt;</em> -X DELETE -H "x-auth-token: $OS_AUTH_TOKEN"</li>
+      </ul>
+    </p>    
+
   </body>
 </html>
