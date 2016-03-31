@@ -134,6 +134,9 @@ def container_get_contents(request, container):
     files = SlowishFile.objects.filter(container=container).order_by("path")
 
     if request.GET:
+        if "prefix" in request.GET:
+            files = files.filter(path__startswith=request.GET["prefix"])
+
         if "marker" in request.GET:
             files = files.filter(path__gt=request.GET["marker"])
 

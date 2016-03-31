@@ -355,6 +355,28 @@ class FilesViewTest(TestCase):
             '{"bytes": 0, "content_type": "application/directory",'
             '"name": "is"}]')
 
+    def test_files_prefix(self):
+        """Verify query of files matching a prefix."""
+
+        # Create several files in a container
+        self.container_view_put("containter")
+        self.file_view_put("container", "this/file/is/your/file")
+        self.file_view_put("container", "this/file/is/my/file")
+        self.file_view_put("container", "from/california")
+        self.file_view_put("container", "to/the/new/york/island")
+        self.file_view_put("container", "this/file/is/made/for/you/and/me")
+
+        # List only those files matching a prefix
+        response = self.file_view_get("container", query="?prefix=this/file")
+        self.assertJSONEqual(
+            response.content,
+            '[{"bytes": 0, "content_type": "application/directory",'
+            '"name": "this/file/is/made/for/you/and/me"},'
+            '{"bytes": 0, "content_type": "application/directory",'
+            '"name": "this/file/is/my/file"},'
+            '{"bytes": 0, "content_type": "application/directory",'
+            '"name": "this/file/is/your/file"}]')
+
     # We don't yet support getting file contents, but we can at least
     # ask about directory objects that we have stored as files within
     # a container.
