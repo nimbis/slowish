@@ -22,6 +22,21 @@ def unauthorized():
 @csrf_exempt
 def tokens(request):
 
+    # For sake of convenience when testing, we have one set of
+    # credentials hard-coded in the Slowish app itself
+    #
+    # And yes, the use of a function attribute here is a rather
+    # un-pythonic idiom, so consider this an argument in favor of
+    # porting Slowish to the more django-nic idiom of using
+    # class-based views.
+    if not hasattr(tokens, "setup"):
+        tokens.setup = True
+        account = SlowishAccount.objects.get_or_create(id="1234")[0]
+        SlowishUser.objects.get_or_create(
+            account=account,
+            username="slowish_test",
+            password="not_secret")
+
     try:
         jreq = json.loads(request.body)
         try:
