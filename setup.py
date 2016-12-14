@@ -10,7 +10,7 @@ setup(
     license="BSD",
     packages=find_packages(exclude=["test_project", ]),
     install_requires=[
-        "django<1.9",
+        "django<2.0",
     ],
     zip_safe=False,
     include_package_data=True,
