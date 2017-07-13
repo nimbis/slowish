@@ -1,3 +1,5 @@
+export APP_NAME=slowish
+
 # clean out potentially stale pyc files
 .PHONY: clean
 clean:
@@ -33,12 +35,48 @@ flake8: check-venv
 	flake8 $(FLAKE8_OPTS) .
 
 #
+# reset database (and apply migrations)
+#
+.PHONY: reset
+reset: check-venv createdb
+	./manage.py migrate
+
+#
 # unit tests
 #
 
 .PHONY: test
 test: check-venv clean
 	python -Wall ./manage.py test --keepdb
+
+#
+# Drop and recreate databases
+#
+
+DATABASE_HOST ?= ''
+DATABASE_PORT ?= 5432
+DATABASE_NAME ?= ${APP_NAME}
+DATABASE_USER ?= ${USER}
+DATABASE_PASSWORD ?= ''
+
+.PHONY: reset
+createdb: check-venv
+	# Testing DB
+	-@ PGHOST=${DATABASE_HOST} PGPORT=${DATABASE_PORT} \
+	  PGUSER=${DATABASE_USER} PGPASSWORD=${DATABASE_PASSWORD} \
+	  psql -c 'drop database ${DATABASE_NAME}_test;'
+	@ PGHOST=${DATABASE_HOST} PGPORT=${DATABASE_PORT} \
+	  PGNAME=${DATABASE_NAME} PGUSER=${DATABASE_USER} \
+	  PGPASSWORD=${DATABASE_PASSWORD} \
+	  psql -c 'create database ${DATABASE_NAME}_test;'
+	  # Runserver DB
+	-@ PGHOST=${DATABASE_HOST} PGPORT=${DATABASE_PORT} \
+	  PGUSER=${DATABASE_USER} PGPASSWORD=${DATABASE_PASSWORD} \
+	  psql -c 'drop database ${DATABASE_NAME};'
+	@ PGHOST=${DATABASE_HOST} PGPORT=${DATABASE_PORT} \
+	  PGNAME=${DATABASE_NAME} PGUSER=${DATABASE_USER} \
+	  PGPASSWORD=${DATABASE_PASSWORD} \
+	  psql -c 'create database ${DATABASE_NAME};'
 
 #
 # code coverage

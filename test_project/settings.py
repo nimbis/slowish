@@ -1,5 +1,6 @@
 # Django settings for the test_project to drive testing of slowish
 import os
+import getpass
 
 # Generated randomly by django-admin. Do not share.
 SECRET_KEY = '*akm_v+*=699m89#(&ud7pq5zq&p^&)e+6ap6a0t5=(g2kqi88'
@@ -14,10 +15,14 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # A file-backed database allows us to take advantage of --keepdb
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'slowish',
+        'USER': os.environ.get('DATABASE_USER', getpass.getuser()),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD', ''),
+        'HOST': os.environ.get('DATABASE_HOST', ''),
+        'PORT': os.environ.get('DATABASE_PORT', '5432'),
         'TEST': {
-            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+           'NAME': 'slowish_test',
         }
     }
 }
