@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="slowish",
-    version="0.0.1",
+    version="0.0.2",
     author="Nimbis Services, Inc.",
     author_email="info@nimbisservices.com",
     description="Lightweight implementation of Swift API for testing",
